@@ -54,6 +54,7 @@ async function request(path, fields) {
   }
   const response = await fetch(backend + '/admin/support/' + path,options);
   if (response.status === 401) throw new Error('账号或密码不正确。');
+  if (response.status === 429) throw new Error('操作过于频繁，请稍后再试。');
   if (!response.ok) {
     const error = await response.json().catch(() => ({}));
     throw new Error(error.message || '客服工作台暂时不可用。');
@@ -269,7 +270,9 @@ if (login) {
       refresh();
     } catch (error) {
       authorization = '';
-      status.textContent = error.name === 'TypeError' ? '连接客服服务器失败，请稍后再试。' : error.message;
+      status.textContent = ['TypeError','TimeoutError'].includes(error.name)
+        ? '无法连接客服服务器。请确认托管电脑和公网连接正在运行。'
+        : error.message;
     } finally {
       submit.disabled = false;
     }
