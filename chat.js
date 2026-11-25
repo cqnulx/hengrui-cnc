@@ -1,4 +1,4 @@
-import { frontendPath, serviceOffline, visitorRequest } from './site-api.js';
+import { frontendPath, language, serviceOffline, t, visitorRequest } from './site-api.js';
 
 const dialog = document.querySelector('#chat-dialog');
 const launch = document.querySelector('#chat-launch');
@@ -12,7 +12,7 @@ const modeLabel = dialog.querySelector('.chat-mode');
 const transfer = dialog.querySelector('#chat-transfer');
 const shortcutRow = dialog.querySelector('.chat-shortcuts');
 const supportEnabled = dialog.dataset.support === 'on';
-const offlineMessage = '在线客服暂未接通，请通过联系页的微信二维码与我们沟通。';
+const offlineMessage = t('在线客服暂未接通，请通过联系页的微信二维码与我们沟通。');
 const history = [];
 let pending = false;
 let transferring = false;
@@ -36,7 +36,7 @@ function appendMessage(label,text,kind,extra = {}) {
   if (extra.general) {
     const heading = document.createElement('span');
     heading.className = 'chat-reference';
-    heading.textContent = '行业知识';
+    heading.textContent = t('行业知识');
     const paragraph = document.createElement('p');
     paragraph.textContent = extra.general;
     line.append(heading,paragraph);
@@ -45,11 +45,11 @@ function appendMessage(label,text,kind,extra = {}) {
     if (text || extra.general) {
       const heading = document.createElement('span');
       heading.className = 'chat-reference';
-      heading.textContent = '其他问题';
+      heading.textContent = t('其他问题');
       line.append(heading);
     }
     const paragraph = document.createElement('p');
-    paragraph.textContent = extra.outside;
+    paragraph.textContent = extra.offline ? t(extra.outside) : extra.outside;
     line.append(paragraph);
   }
   if (extra.sources?.length) {
@@ -59,7 +59,7 @@ function appendMessage(label,text,kind,extra = {}) {
       if (!source.href.startsWith('/') || source.href.startsWith('//')) continue;
       const link = document.createElement('a');
       link.href = frontendPath(source.href);
-      link.textContent = source.title;
+      link.textContent = source.title.split(' · ').map(part => t(part)).join(' · ');
       if (link.pathname === location.pathname && link.hash) link.addEventListener('click', () => dialog.close());
       links.append(link);
     }
@@ -69,10 +69,10 @@ function appendMessage(label,text,kind,extra = {}) {
     const suggestion = document.createElement('div');
     suggestion.className = 'chat-suggestion';
     const reason = document.createElement('p');
-    reason.textContent = extra.handoff;
+    reason.textContent = t(extra.handoff);
     const button = document.createElement('button');
     button.type = 'button';
-    button.textContent = '转人工客服';
+    button.textContent = t('转人工客服');
     button.dataset.chatTransfer = '';
     suggestion.append(reason,button);
     line.append(suggestion);
@@ -91,7 +91,7 @@ function appendMessage(label,text,kind,extra = {}) {
 const modes = {ai:'网站助手',waiting:'等待人工接入',human:'人工客服接待中'};
 
 function updateControls() {
-  modeLabel.textContent = modes[mode];
+  modeLabel.textContent = t(modes[mode]);
   transfer.hidden = !supportEnabled || mode !== 'ai';
   transfer.disabled = transferring;
   shortcutRow.hidden = mode !== 'ai';
@@ -101,7 +101,7 @@ function updateControls() {
     suggestion.hidden = mode !== 'ai';
     suggestion.querySelector('button').disabled = transferring;
   }
-  question.placeholder = mode === 'ai' ? '输入您的问题…' : '发送消息给人工客服…';
+  question.placeholder = t(mode === 'ai' ? '输入您的问题…' : '发送消息给人工客服…');
 }
 
 const captions = {visitor:'你',assistant:'网站助手',agent:'人工客服',system:'接待状态'};
@@ -111,7 +111,7 @@ async function sync() {
   if (syncPromise) await syncPromise.catch(() => {});
   const request = (async () => {
     const response = await visitorRequest('/api/support?after=' + cursor,{signal:AbortSignal.timeout(8000)});
-    if (!response.ok) throw new Error('暂时无法同步对话。');
+    if (!response.ok) throw new Error(t('暂时无法同步对话。'));
     const data = await response.json();
     if (!data.available) return;
     const previous = mode;
@@ -119,7 +119,8 @@ async function sync() {
     for (const entry of data.messages) {
       if (entry.id <= cursor) continue;
       const reply = entry.reply || {};
-      appendMessage(captions[entry.kind],reply.site || entry.text,'from-' + (entry.kind === 'visitor' ? 'user' : entry.kind),reply);
+      const body = reply.site || entry.text;
+      appendMessage(t(captions[entry.kind]),entry.kind === 'system' || reply.offline ? t(body) : body,'from-' + (entry.kind === 'visitor' ? 'user' : entry.kind),reply);
       cursor = entry.id;
     }
     if (previous !== 'ai' && mode === 'ai') status.textContent = '';
@@ -140,14 +141,14 @@ async function askForAgent() {
   try {
     const response = await visitorRequest('/api/support/transfer',{method:'POST',body:new URLSearchParams(),signal:AbortSignal.timeout(8000)});
     const data = await response.json();
-    if (!response.ok) throw new Error(data.message || '暂时无法转接。');
+    if (!response.ok) throw new Error(t(data.message,'暂时无法转接。'));
     mode = data.mode;
     currentSend?.abort();
     optimistic?.remove();
     status.textContent = '';
     await sync();
   } catch (error) {
-    status.textContent = error.message || '暂时无法转接。';
+    status.textContent = error.name === 'Error' ? error.message : t('暂时无法转接。');
   } finally {
     transferring = false;
     updateControls();
@@ -164,7 +165,7 @@ launch.addEventListener('click', () => {
   launch.setAttribute('aria-expanded','true');
   if (!matchMedia('(pointer: coarse)').matches) question.focus();
   if (supportEnabled && !serviceOffline) {
-    sync().catch(() => { status.textContent = '暂时无法同步对话。'; });
+    sync().catch(() => { status.textContent = t('暂时无法同步对话。'); });
     clearInterval(watcher);
     watcher = setInterval(() => {
       if (!pending && !transferring && !syncPromise && !document.hidden) sync().catch(() => {});
@@ -199,13 +200,13 @@ async function send(value) {
   pending = true;
   updateControls();
   question.value = '';
-  optimistic = appendMessage('你',text,'from-user');
-  status.textContent = mode === 'ai' ? '正在回答…' : '正在发送…';
+  optimistic = appendMessage(t('你'),text,'from-user');
+  status.textContent = t(mode === 'ai' ? '正在回答…' : '正在发送…');
   const controller = new AbortController();
   currentSend = controller;
   let submitted = false;
 
-  const fields = new URLSearchParams();
+  const fields = new URLSearchParams({language});
   for (const entry of [...history.slice(-6),text]) fields.append('message',entry);
   try {
     const response = await visitorRequest('/api/chat',{
@@ -225,9 +226,9 @@ async function send(value) {
     }
     if (!response.ok || typeof data.site !== 'string' || typeof data.general !== 'string' ||
         typeof data.outside !== 'string' || !(data.site || data.general || data.outside)) {
-      throw new Error(data.message || '暂时无法回答，请稍后重试。');
+      throw new Error(t(data.message,'暂时无法回答，请稍后重试。'));
     }
-    appendMessage('网站助手',data.site,'from-assistant',data);
+    appendMessage(t('网站助手'),data.site,'from-assistant',data);
     if (!data.offline) {
       const context = [data.site,data.general,data.outside].filter(Boolean);
       const partLimit = Math.floor((3000 - context.length + 1) / context.length);
@@ -239,8 +240,8 @@ async function send(value) {
     optimistic?.remove();
     if (!controller.signal.aborted) {
       if (!submitted && !question.value) question.value = text;
-      status.textContent = submitted ? '消息已发送，正在等待同步。' : error.name === 'Error'
-        ? error.message : '暂时无法发送，请稍后重试。';
+      status.textContent = submitted ? t('消息已发送，正在等待同步。') : error.name === 'Error'
+        ? error.message : t('暂时无法发送，请稍后重试。');
     }
   } finally {
     pending = false;

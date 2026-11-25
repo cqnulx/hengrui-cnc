@@ -1,30 +1,48 @@
-import { serviceOffline, visitorRequest } from './site-api.js';
+import { serviceOffline, t, visitorRequest } from './site-api.js';
 
 const menu = document.querySelector('.menu-toggle');
 const nav = document.querySelector('#nav');
 const drop = document.querySelector('.drop-toggle');
 const serviceNav = document.querySelector('#services-nav');
+const languageMenu = document.querySelector('.language-menu');
+const languageButton = languageMenu.querySelector('summary');
+const languageLinks = [...languageMenu.querySelectorAll('a[data-language-link]')].map(link => [link,link.pathname]);
+
+function updateLanguageLinks() {
+  for (const [link,path] of languageLinks) link.href = path + location.search + location.hash;
+}
+updateLanguageLinks();
+window.addEventListener('hashchange', updateLanguageLinks);
+window.addEventListener('popstate', updateLanguageLinks);
+languageMenu.addEventListener('toggle', () => {
+  if (languageMenu.open) {
+    updateLanguageLinks();
+    setMenu(false);
+    setDrop(false);
+  }
+});
 
 function setMenu(open) {
   menu.setAttribute('aria-expanded', String(open));
-  menu.setAttribute('aria-label', open ? '关闭主菜单' : '打开主菜单');
+  menu.setAttribute('aria-label', t(open ? '关闭主菜单' : '打开主菜单'));
   nav.classList.toggle('open', open);
 }
 let dropPinned = false;
 function setDrop(open, pinned = false) {
   dropPinned = open && pinned;
   drop.setAttribute('aria-expanded', String(open));
-  drop.setAttribute('aria-label', open ? '收起加工服务' : '展开加工服务');
+  drop.setAttribute('aria-label', t(open ? '收起加工服务' : '展开加工服务'));
   serviceNav.hidden = !open;
 }
 menu.addEventListener('click', () => {
   const open = menu.getAttribute('aria-expanded') !== 'true';
+  if (open) languageMenu.open = false;
   setMenu(open);
   if (!open) setDrop(false);
 });
 drop.addEventListener('click', () => setDrop(!dropPinned, true));
 const serviceMenu = drop.closest('.nav-service');
-const desktopMenu = matchMedia('(min-width: 691px) and (hover: hover)');
+const desktopMenu = matchMedia('(min-width: 1101px) and (hover: hover)');
 serviceMenu.addEventListener('pointerenter', () => {
   if (desktopMenu.matches && serviceNav.hidden) setDrop(true);
 });
@@ -36,10 +54,14 @@ serviceMenu.addEventListener('focusout', event => {
 });
 document.addEventListener('click', event => {
   if (!event.target.closest('.nav-service')) setDrop(false);
+  if (!languageMenu.contains(event.target)) languageMenu.open = false;
 });
 document.addEventListener('keydown', event => {
   if (event.key !== 'Escape') return;
-  if (!serviceNav.hidden) {
+  if (languageMenu.open) {
+    languageMenu.open = false;
+    languageButton.focus();
+  } else if (!serviceNav.hidden) {
     setDrop(false);
     drop.focus();
   } else if (nav.classList.contains('open') && getComputedStyle(menu).display !== 'none') {
@@ -118,14 +140,14 @@ if (heroVideo) {
     try {
       await heroVideo.play();
     } catch {
-      if (!document.hidden) toggle.textContent = '播放背景';
+      if (!document.hidden) toggle.textContent = t('播放背景');
     }
   }
   heroVideo.addEventListener('playing', () => {
     heroVideo.classList.add('playing-video');
-    toggle.textContent = '暂停背景';
+    toggle.textContent = t('暂停背景');
   });
-  heroVideo.addEventListener('pause', () => { toggle.textContent = '播放背景'; });
+  heroVideo.addEventListener('pause', () => { toggle.textContent = t('播放背景'); });
   heroVideo.addEventListener('error', () => {
     heroVideo.classList.remove('playing-video');
     toggle.hidden = true;
@@ -181,10 +203,10 @@ form?.addEventListener('submit', async event => {
   const result = form.querySelector('.form-result');
   if (serviceOffline) {
     result.dataset.error = 'true';
-    result.textContent = '在线提交暂未接通，请通过联系页的微信二维码与我们沟通。';
+    result.textContent = t('在线提交暂未接通，请通过联系页的微信二维码与我们沟通。');
     return;
   }
-  result.textContent = '正在提交…';
+  result.textContent = t('正在提交…');
   result.removeAttribute('data-error');
   form.querySelectorAll('.field-error').forEach(error => { error.textContent = ''; });
   form.querySelectorAll('[aria-invalid]').forEach(input => input.removeAttribute('aria-invalid'));
@@ -203,20 +225,20 @@ form?.addEventListener('submit', async event => {
         const fieldError = document.getElementById(name + '-error');
         if (input && fieldError) {
           input.setAttribute('aria-invalid','true');
-          fieldError.textContent = message;
+          fieldError.textContent = t(message);
           invalid ||= input;
         }
       }
       result.dataset.error = 'true';
-      result.textContent = data.message || '请检查表单并重试。';
+      result.textContent = t(data.message,'请检查表单并重试。');
       invalid?.focus();
     } else {
       form.reset();
-      result.textContent = '提交成功。受理编号 ' + data.reference;
+      result.textContent = t('提交成功。受理编号') + ' ' + data.reference;
     }
   } catch {
     result.dataset.error = 'true';
-    result.textContent = '暂时无法提交，请稍后重试。';
+    result.textContent = t('暂时无法提交，请稍后重试。');
   } finally {
     submit.disabled = false;
   }

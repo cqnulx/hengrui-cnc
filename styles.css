@@ -55,6 +55,18 @@ h3 {font-size:1.2rem}
 .head-cta {display:inline-flex;align-items:center;gap:15px;border:1px solid var(--signal);padding:10px 15px;background:var(--accent);color:white;border-radius:4px;font-size:.89rem;font-weight:700;white-space:nowrap}
 .head-cta:hover {background:#bc1426}
 .menu-toggle {display:none}
+.head-actions {display:flex;align-items:center;gap:12px;flex-shrink:0}
+.nav>a.nav-consult {display:none}
+.language-menu {position:relative}
+.language-menu summary {display:flex;align-items:center;gap:6px;list-style:none;min-height:40px;padding:5px 8px;border:1px solid var(--line);border-radius:4px;color:var(--ink);font-size:.83rem;font-weight:700;cursor:pointer;white-space:nowrap}
+.language-menu summary::-webkit-details-marker {display:none}
+.language-menu summary .icon {width:1.05rem;height:1.05rem}
+.language-menu summary .icon:last-child {width:.8rem}
+.language-menu[open] summary,.language-menu summary:hover {border-color:var(--signal);color:var(--signal)}
+.language-menu ul {position:absolute;z-index:5;top:calc(100% + 8px);inset-inline-end:0;width:max-content;min-width:153px;margin:0;padding:5px;list-style:none;background:var(--panel);border:1px solid var(--line);border-radius:5px;box-shadow:0 8px 24px #0003}
+.language-menu a {display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:39px;padding:5px 9px;border-radius:3px;font-size:.88rem;white-space:nowrap}
+.language-menu a:is(:hover,:focus-visible,[aria-current="page"]) {background:var(--soft);color:var(--signal)}
+html[lang="de"] main :is(h1,h2,h3,p,summary,button) {overflow-wrap:anywhere;hyphens:auto}
 .hero {position:relative;isolation:isolate;overflow:hidden;min-height:552px;background:var(--hero);color:white;display:grid;align-items:center}
 .hero-art {position:absolute;z-index:-2;inset:0 0 0 42%;background:#222226}
 .hero-art::before {content:"";position:absolute;inset:0;background:center 48% / cover no-repeat url("./media/hero-video-poster.webp");filter:blur(30px) saturate(.38) brightness(.45);transform:scale(1.12)}
@@ -352,10 +364,15 @@ body:has(.chat-launch) .cookie-panel:not(:modal) {left:max(18px,env(safe-area-in
   .hero {min-height:510px}
   .hero-art {left:34%}
 }
-@media (max-width:690px) {
-  .wrap {width:calc(100% - 36px)}
-  .head-row {height:61px;justify-content:start;gap:9px}
-  .head-cta {margin-left:auto;gap:5px;padding:8px 9px;font-size:.8rem}
+@media (max-width:1250px) {
+  .head-row {gap:15px}
+  .nav {gap:clamp(12px,1.6vw,22px)}
+  .head-cta {gap:7px;padding-inline:10px}
+}
+@media (max-width:1100px) {
+  .head-row {height:61px;gap:9px}
+  .head-actions {gap:8px}
+  .head-cta {gap:5px;padding:8px 9px;font-size:.8rem}
   .menu-toggle {display:block;padding:8px;font-size:1.15rem}
   .nav {display:none;position:absolute;top:100%;inset-inline:0;height:auto;align-items:stretch;background:var(--panel);border-bottom:1px solid var(--line);padding:6px 18px 13px;gap:0}
   .nav.open {display:grid}
@@ -363,6 +380,20 @@ body:has(.chat-launch) .cookie-panel:not(:modal) {left:max(18px,env(safe-area-in
   .nav a.current::after {display:none}
   .nav-service {display:grid;grid-template-columns:1fr auto;gap:0}
   .drop-panel {position:static;grid-column:1/-1;width:100%;box-shadow:none}
+}
+@media (max-width:530px) {
+  .head-cta {display:none}
+  .nav>a.nav-consult {display:flex}
+  .head-actions {gap:4px}
+  .brand {min-width:0;flex:0 1 auto;gap:7px}
+  .brand-mark {flex:none;width:24px}
+  .brand-type strong {font-size:.95rem;letter-spacing:.04em;white-space:normal}
+  html[lang="en"] .material-row,html[lang="de"] .material-row {flex-wrap:wrap;align-content:center}
+  html[lang="en"] .material-row>span,html[lang="de"] .material-row>span {border:0;padding:0}
+  .material-row li {white-space:normal}
+}
+@media (max-width:690px) {
+  .wrap {width:calc(100% - 36px)}
   .hero {min-height:520px;align-items:end}
   .hero-art {inset:0 0 23% 0}
   .hero-art :is(img,video) {width:100%;object-position:50% 42%;mask-image:none}
@@ -390,7 +421,8 @@ body:has(.chat-launch) .cookie-panel:not(:modal) {left:max(18px,env(safe-area-in
   .editorial,.detail-grid,.benefit-grid,.step-grid,.page-hero-grid,.form-grid,.machine-group {grid-template-columns:1fr;gap:14px}
   .cta {padding:36px 0}
   .cta-row {align-items:start;flex-direction:column}
-  .footer-grid {grid-template-columns:1fr 1fr}
+  .footer-grid {grid-template-columns:repeat(2,minmax(0,1fr))}
+  .footer-grid .brand-type strong {white-space:normal;overflow-wrap:anywhere}
   .footer-base {flex-direction:column}
   .page-hero {padding:18px 0 28px}
   .page-hero figure {height:195px}

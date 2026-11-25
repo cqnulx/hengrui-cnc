@@ -1,8 +1,13 @@
+import { languages, normalizeLanguage, translateInterface } from './i18n.js';
+
 const settings = document.documentElement.dataset;
 export const published = settings.service === 'pages';
 export const backend = settings.backend || '';
 export const serviceOffline = published && !backend;
 const basePath = settings.siteBase || '';
+export const language = normalizeLanguage(document.documentElement.lang.split('-')[0]);
+const languagePrefix = languages[language].prefix;
+export const t = (key, fallback) => translateInterface(language,key,fallback);
 let visitor;
 
 function visitorToken() {
@@ -25,10 +30,10 @@ export function visitorRequest(path, options = {}) {
 }
 
 export function frontendPath(path) {
-  return basePath + path;
+  return basePath + languagePrefix + path;
 }
 
 export function currentPage() {
-  const path = location.pathname.slice(basePath.length);
+  const path = location.pathname.slice(basePath.length + languagePrefix.length) || '/';
   return path.endsWith('/index.html') ? path.slice(0,-10) : path;
 }
