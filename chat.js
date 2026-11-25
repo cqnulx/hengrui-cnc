@@ -1,3 +1,5 @@
+import { frontendPath, serviceOffline, visitorRequest } from './site-api.js';
+
 const dialog = document.querySelector('#chat-dialog');
 const launch = document.querySelector('#chat-launch');
 const form = dialog.querySelector('form');
@@ -10,7 +12,6 @@ const modeLabel = dialog.querySelector('.chat-mode');
 const transfer = dialog.querySelector('#chat-transfer');
 const shortcutRow = dialog.querySelector('.chat-shortcuts');
 const supportEnabled = dialog.dataset.support === 'on';
-const serviceOffline = document.documentElement.dataset.service === 'offline';
 const offlineMessage = '在线客服暂未接通，请通过联系页的微信二维码与我们沟通。';
 const history = [];
 let pending = false;
@@ -57,7 +58,7 @@ function appendMessage(label,text,kind,extra = {}) {
     for (const source of extra.sources) {
       if (!source.href.startsWith('/') || source.href.startsWith('//')) continue;
       const link = document.createElement('a');
-      link.href = source.href;
+      link.href = frontendPath(source.href);
       link.textContent = source.title;
       if (link.pathname === location.pathname && link.hash) link.addEventListener('click', () => dialog.close());
       links.append(link);
@@ -109,9 +110,10 @@ async function sync() {
   if (!supportEnabled) return;
   if (syncPromise) await syncPromise.catch(() => {});
   const request = (async () => {
-    const response = await fetch('/api/support?after=' + cursor,{signal:AbortSignal.timeout(8000)});
+    const response = await visitorRequest('/api/support?after=' + cursor,{signal:AbortSignal.timeout(8000)});
     if (!response.ok) throw new Error('暂时无法同步对话。');
     const data = await response.json();
+    if (!data.available) return;
     const previous = mode;
     mode = data.mode;
     for (const entry of data.messages) {
@@ -136,7 +138,7 @@ async function askForAgent() {
   transferring = true;
   updateControls();
   try {
-    const response = await fetch('/api/support/transfer',{method:'POST',body:new URLSearchParams(),signal:AbortSignal.timeout(8000)});
+    const response = await visitorRequest('/api/support/transfer',{method:'POST',body:new URLSearchParams(),signal:AbortSignal.timeout(8000)});
     const data = await response.json();
     if (!response.ok) throw new Error(data.message || '暂时无法转接。');
     mode = data.mode;
@@ -206,7 +208,7 @@ async function send(value) {
   const fields = new URLSearchParams();
   for (const entry of [...history.slice(-6),text]) fields.append('message',entry);
   try {
-    const response = await fetch('/api/chat',{
+    const response = await visitorRequest('/api/chat',{
       method:'POST',
       body:fields,
       headers:{Accept:'application/json'},

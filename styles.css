@@ -316,6 +316,8 @@ body:has(.chat-launch) .cookie-panel:not(:modal) {left:max(18px,env(safe-area-in
 .desk-back {margin-bottom:18px;color:var(--signal)}
 .desk-layout {display:grid;grid-template-columns:minmax(240px,310px) minmax(0,1fr);gap:15px;align-items:start}
 .desk-panel {background:var(--panel);border:1px solid var(--line);min-width:0;padding:16px}
+.desk-login {display:grid;gap:8px;max-width:380px}
+.desk-login .button {justify-self:start;margin-top:4px}
 .desk-queue {display:grid;gap:12px}
 .desk-queue form {display:grid;gap:6px}
 .desk-queue form>div,#desk-reply>div {display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px}

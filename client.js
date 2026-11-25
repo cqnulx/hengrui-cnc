@@ -1,3 +1,5 @@
+import { serviceOffline, visitorRequest } from './site-api.js';
+
 const menu = document.querySelector('.menu-toggle');
 const nav = document.querySelector('#nav');
 const drop = document.querySelector('.drop-toggle');
@@ -173,7 +175,6 @@ for (const filter of filters) {
 }
 
 const form = document.querySelector('[data-lead-form]');
-const serviceOffline = document.documentElement.dataset.service === 'offline';
 form?.addEventListener('submit', async event => {
   event.preventDefault();
   const submit = form.querySelector('button[type=submit]');
@@ -189,7 +190,7 @@ form?.addEventListener('submit', async event => {
   form.querySelectorAll('[aria-invalid]').forEach(input => input.removeAttribute('aria-invalid'));
   submit.disabled = true;
   try {
-    const response = await fetch(form.action, {
+    const response = await visitorRequest('/api/' + form.dataset.leadForm, {
       method: 'POST',
       body: new URLSearchParams(new FormData(form)),
       headers: { Accept: 'application/json' },
@@ -220,5 +221,5 @@ form?.addEventListener('submit', async event => {
     submit.disabled = false;
   }
 });
-if (form && serviceOffline) form.querySelector('button[type=submit]').disabled = false;
+if (form) form.querySelector('button[type=submit]').disabled = false;
 
