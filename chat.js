@@ -154,11 +154,16 @@ async function askForAgent() {
 }
 
 launch.addEventListener('click', () => {
-  dialog.showModal();
+  if (dialog.open) {
+    dialog.close();
+    return;
+  }
+  dialog.show();
   launch.setAttribute('aria-expanded','true');
-  question.focus();
+  if (!matchMedia('(pointer: coarse)').matches) question.focus();
   if (supportEnabled && !serviceOffline) {
     sync().catch(() => { status.textContent = '暂时无法同步对话。'; });
+    clearInterval(watcher);
     watcher = setInterval(() => {
       if (!pending && !transferring && !syncPromise && !document.hidden) sync().catch(() => {});
     },2000);
@@ -166,10 +171,19 @@ launch.addEventListener('click', () => {
 });
 dialog.querySelector('.chat-close').addEventListener('click', () => dialog.close());
 dialog.addEventListener('close', () => {
+  if (dialog.open) return;
   clearInterval(watcher);
   launch.setAttribute('aria-expanded','false');
   launch.focus();
 });
+for (const control of [launch,dialog]) {
+  control.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && dialog.open) {
+      event.stopPropagation();
+      dialog.close();
+    }
+  });
+}
 transfer.addEventListener('click',askForAgent);
 transcript.addEventListener('click',event => { if (event.target.closest('[data-chat-transfer]')) askForAgent(); });
 
