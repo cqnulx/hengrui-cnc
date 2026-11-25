@@ -173,10 +173,16 @@ for (const filter of filters) {
 }
 
 const form = document.querySelector('[data-lead-form]');
+const serviceOffline = document.documentElement.dataset.service === 'offline';
 form?.addEventListener('submit', async event => {
   event.preventDefault();
   const submit = form.querySelector('button[type=submit]');
   const result = form.querySelector('.form-result');
+  if (serviceOffline) {
+    result.dataset.error = 'true';
+    result.textContent = '在线提交暂未接通，请通过联系页的微信二维码与我们沟通。';
+    return;
+  }
   result.textContent = '正在提交…';
   result.removeAttribute('data-error');
   form.querySelectorAll('.field-error').forEach(error => { error.textContent = ''; });
@@ -214,4 +220,5 @@ form?.addEventListener('submit', async event => {
     submit.disabled = false;
   }
 });
+if (form && serviceOffline) form.querySelector('button[type=submit]').disabled = false;
 
